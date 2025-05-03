@@ -5,7 +5,7 @@ tasks = {"run", "walk", "stairAscent", "stairDescent",...
     "sit_to_stand"};        % {run, walk, stairAscent, stairDescent, sit_to_stand}
 joints = {'ankle', 'knee'}; % {hip, knee, ankle}
 human.mass = 1;             % Mass of the user [Kg]
-human.height = 1;           % Height of the user [m]
+human.height = 1.76;        % Height of the user [m] 1.76m (Mean Roebroeck)
 human.wSpeed = 'normal_cadence';  % {fast_cadence, slow_cadence, normal_cadence}
 human.FourierFit = 0;       % Apply a Fourier fit (periodic trajectories)
 human.nPoints = 300;        % Number of data points per trajectory
@@ -26,16 +26,17 @@ function generateBiomechanicTrajectories(human)
 mass = human.mass;      % Mass of the user [Kg]
 joint = human.joint;    % Joint to analyze {hip, knee, ankle}
 nPoints = human.nPoints;
+height = human.height;
 
 if strcmp(human.task, 'run')
-    load('raw_data_from_literature/dataset_Novacheck.mat', ...
+    load('../raw_data_from_literature/dataset_Novacheck.mat', ...
         'novacheck_running')
     ql       = novacheck_running.(joint).position *pi /180;
     torque   = novacheck_running.(joint).torque*mass;
     time     = novacheck_running.(joint).time;
     textFile = sprintf('%s_%s_%dkg', human.task, human.joint, human.mass);
 elseif strcmp(human.task, 'walk')
-    load('raw_data_from_literature/dataset_Winter.mat', 'level_walking')
+    load('../raw_data_from_literature/dataset_Winter.mat', 'level_walking')
     wSpeed = human.wSpeed;
     %-------------------------------WINTER'S DATA SCALING
     % Calculate sample time from cadence (steps per minute) Winter page 12
@@ -58,16 +59,16 @@ elseif strcmp(human.task, 'walk')
         human.task, human.wSpeed, human.joint, human.mass);
 elseif strcmp(human.task, 'stairAscent') || ...
         strcmp(human.task, 'stairDescent')
-    load('raw_data_from_literature/dataset_Riener.mat', 'riener')
+    load('../raw_data_from_literature/dataset_Riener.mat', 'riener')
     ql       = riener.(human.task).(joint).position*pi/180;
     torque   = riener.(human.task).(joint).torque*mass;
     time     = riener.(human.task).(joint).time;
     textFile = sprintf('%s_%s_%dkg', ...
         human.task, human.joint, human.mass);
 elseif strcmp(human.task, 'sit_to_stand')
-    load('raw_data_from_literature/dataset_Roebroeck.mat', 'roebroeck')
+    load('../raw_data_from_literature/dataset_Roebroeck.mat', 'roebroeck')
     ql      = roebroeck.(joint).position.'*pi/180;
-    torque  = roebroeck.(joint).torque.'*mass;
+    torque  = roebroeck.(joint).torque.'*mass*height;
     time    = roebroeck.(joint).time.';
     textFile = sprintf('%s_%s_%dkg', ...
         human.task, human.joint, human.mass);
@@ -140,6 +141,7 @@ if human.FourierFit
     end
     toc
 end
+mkdir('processed_data_from_literature');
 save("processed_data_from_literature\" + textFile, 'qlDisc', 'qldDisc',...
     'qlddDisc', 'torqueDisc', 'torquedDisc', 'torqueddDisc', 'time');
 end
